@@ -245,6 +245,13 @@ class AutoZhuApp:
             asyncio.create_task(self.service.run(), name="reaction-worker"),
         ]
 
+        # 反向模式下，等端口真正 listen 之后再返回，避免调用方立刻连接时被拒。
+        if isinstance(self.driver, ReverseDriver):
+            try:
+                await asyncio.wait_for(self.driver.ready.wait(), timeout=5)
+            except asyncio.TimeoutError:
+                logger.error("反向 WebSocket 服务 5 秒内没有启动，请检查端口是否被占用")
+
     async def stop(self) -> None:
         self._stop.set()
         for task in self._tasks:

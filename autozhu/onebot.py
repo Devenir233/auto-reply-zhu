@@ -288,6 +288,7 @@ class ReverseDriver:
         self.port = port
         self.token = token
         self.bound_port: int | None = None
+        self.ready = asyncio.Event()
 
     def _process_request(self, connection: ServerConnection, request: Any) -> Any:
         if not self.token:
@@ -324,6 +325,7 @@ class ReverseDriver:
                 self.host,
                 self.bound_port or self.port,
             )
+            self.ready.set()
             await stop.wait()
 
 

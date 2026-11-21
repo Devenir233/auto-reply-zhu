@@ -179,6 +179,8 @@ class ReverseModeTest(unittest.IsolatedAsyncioTestCase):
         self.config.connection.reverse_port = free_port()
         self.app = AutoZhuApp(self.config)
         await self.app.start()
+        # start() 返回时反向监听必须已经就绪
+        self.assertEqual(self.app.driver.bound_port, self.config.connection.reverse_port)
         self.url = f"ws://127.0.0.1:{self.config.connection.reverse_port}/"
         self.bot: MockBot | None = None
 
