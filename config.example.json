@@ -1,0 +1,29 @@
+{
+  "connection": {
+    "mode": "forward",
+    "forward_url": "ws://127.0.0.1:3001",
+    "reverse_host": "127.0.0.1",
+    "reverse_port": 8080,
+    "token": "",
+    "proxy": null,
+    "llbot_data_dir": ""
+  },
+  "reaction": {
+    "groups": {
+      "562204345": [
+        "12951"
+      ]
+    },
+    "keywords": [],
+    "ignore_self": true,
+    "dedupe_seconds": 300,
+    "rate_limit_per_second": 1,
+    "rate_limit_burst": 2,
+    "timeout": 10,
+    "retries": 2
+  },
+  "logging": {
+    "level": "INFO",
+    "file": ""
+  }
+}
