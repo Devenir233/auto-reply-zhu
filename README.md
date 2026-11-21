@@ -80,7 +80,7 @@ python main.py --doctor --test-reaction 123456 # 给该群最近一条消息真�
 
 ## 后台常驻（Windows）
 
-- 双击 `启动.bat`：前台运行，窗口别关
+- 双击 `启动.bat`：前台运行，窗口别关（没装 Python 或不在 PATH 里会直接提示）
 - 或装成计划任务（登录后自动后台运行，日志在 `logs/auto-zhu.log`）：
 
 ```powershell
@@ -89,7 +89,9 @@ Start-ScheduledTask -TaskName "Auto Zhu"
 ```
 
 取消自启：`powershell -NoProfile -ExecutionPolicy Bypass -File ".\卸载开机自启.ps1"`；
-临时停止：`Stop-ScheduledTask -TaskName "Auto Zhu"` 或双击 `停止.bat`。
+临时停止：`Stop-ScheduledTask -TaskName "Auto Zhu"` 或双击 `停止.bat`
+（`停止.bat` 会同时结束计划任务和由 `启动.bat` 启动的前台实例）；
+用 `启动.bat` 启动的实例才能被 `停止.bat` 精确识别，直接 `python main.py` 的请用 Ctrl+C。
 
 ## 换 QQ 号
 

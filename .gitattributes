@@ -1,0 +1,4 @@
+# Windows 批处理/PowerShell 脚本必须保留 CRLF，禁止 git 归一化
+*.bat -text
+*.ps1 -text
+*.cmd -text
