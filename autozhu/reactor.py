@@ -100,9 +100,14 @@ class ReactionService:
 
     # ---- 工作协程 ---------------------------------------------------
 
-    async def run(self) -> None:
-        while True:
-            event = await self.queue.get()
+    async def run(self, stop: asyncio.Event) -> None:
+        # 用带超时的取队列，而不是纯 cancel：这样停服时能确定性地退出，
+        # 不依赖「取消正在等待 queue.get() 的任务」这一在部分 3.10 环境会卡住的路径。
+        while not stop.is_set():
+            try:
+                event = await asyncio.wait_for(self.queue.get(), timeout=0.2)
+            except asyncio.TimeoutError:
+                continue
             try:
                 await self.handle(event)
             except asyncio.CancelledError:
@@ -242,7 +247,7 @@ class AutoZhuApp:
 
         self._tasks = [
             asyncio.create_task(self.driver.run(self._stop), name="onebot-driver"),
-            asyncio.create_task(self.service.run(), name="reaction-worker"),
+            asyncio.create_task(self.service.run(self._stop), name="reaction-worker"),
         ]
 
         # 反向模式下，等端口真正 listen 之后再返回，避免调用方立刻连接时被拒。
@@ -254,12 +259,24 @@ class AutoZhuApp:
 
     async def stop(self) -> None:
         self._stop.set()
-        for task in self._tasks:
-            task.cancel()
-        for task in self._tasks:
-            with contextlib.suppress(asyncio.CancelledError, Exception):
-                await task
-        self._tasks.clear()
+        tasks, self._tasks = self._tasks, []
+        if tasks:
+            # 只强杀连接任务；worker 会自己看到 stop 事件后退出（最多 0.5 秒）。
+            for task in tasks:
+                if task.get_name() == "onebot-driver":
+                    task.cancel()
+            await asyncio.sleep(0)
+            _done, pending = await asyncio.wait(tasks, timeout=5)
+            if pending:
+                for task in pending:
+                    task.cancel()
+                await asyncio.wait(pending, timeout=1)
+            for task in tasks:
+                if task.done():
+                    with contextlib.suppress(asyncio.CancelledError, Exception):
+                        task.result()
+                else:
+                    logger.warning("后台任务 %s 未能及时退出", task.get_name())
         self._started = False
 
     async def wait_connected(self, timeout: float = 15.0) -> bool:
