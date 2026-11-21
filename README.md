@@ -1,5 +1,7 @@
 # auto-reply-zhu
 
+[![tests](https://github.com/Devenir233/auto-reply-zhu/actions/workflows/tests.yml/badge.svg)](https://github.com/Devenir233/auto-reply-zhu/actions/workflows/tests.yml)
+
 给指定 QQ 群的每条消息自动贴 **㊗️**（或任意 QQ 表情）。
 
 基于 **OneBot 11** 标准协议，配套 [LLBot](https://github.com/LuckyLilliaDev/LuckyLilliaBot) 作为协议端
