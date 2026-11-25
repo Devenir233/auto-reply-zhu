@@ -45,6 +45,20 @@ class ConfigLoadTest(unittest.TestCase):
             cfg = Config.load(write_config(tmp, payload))
         self.assertEqual(cfg.reaction.emojis_for(1), ["12951"])
 
+    def test_blocked_users_are_normalized_and_deduped(self) -> None:
+        payload = json.loads(json.dumps(BASE))
+        payload["reaction"]["blocked_users"] = [123456, " 654321 ", "123456", ""]
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg = Config.load(write_config(tmp, payload))
+        self.assertEqual(cfg.reaction.blocked_users, ["123456", "654321"])
+
+    def test_rejects_non_numeric_blocked_user(self) -> None:
+        payload = json.loads(json.dumps(BASE))
+        payload["reaction"]["blocked_users"] = ["not-a-qq-number"]
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(ConfigError):
+                Config.load(write_config(tmp, payload))
+
     def test_rejects_unknown_field(self) -> None:
         payload = json.loads(json.dumps(BASE))
         payload["reaction"]["oops"] = 1

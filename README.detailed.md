@@ -5,7 +5,7 @@
 
 - 目标仓库：<https://github.com/Devenir233/auto-reply-zhu>
 - 原项目：[wyx6669036/QQ-auto-zhu](https://github.com/wyx6669036/QQ-auto-zhu)（MIT）
-- 当前版本：2.0.0
+- 当前版本：2.1.0
 
 ---
 
@@ -158,6 +158,7 @@ pip install -r requirements.txt
 | `connection.llbot_data_dir` | `""` | LLBot 的 `data` 目录，用于自动同步 token |
 | `reaction.groups` | —— | `{"群号": ["表情ID"]}`，`"*"` 表示所有群 |
 | `reaction.keywords` | `[]` | 只对包含任一关键词的消息贴；空表示不限制 |
+| `reaction.blocked_users` | `[]` | 屏蔽名单：这些 QQ 号发的消息不贴表情（全局生效） |
 | `reaction.ignore_self` | `true` | 不响应机器人自己发的消息 |
 | `reaction.dedupe_seconds` | `300` | 同一消息去重窗口 |
 | `reaction.rate_limit_per_second` | `1.0` | 令牌桶速率（个/秒） |
@@ -166,6 +167,12 @@ pip install -r requirements.txt
 | `reaction.retries` | `2` | 可重试错误的重试次数 |
 | `logging.level` | `"INFO"` | `DEBUG/INFO/WARNING/ERROR` |
 | `logging.file` | `""` | 写文件时填路径，自动建目录、5MB×3 轮转 |
+
+屏蔽名单示例（这些人的消息会被直接跳过，不影响其他人）：
+
+```json
+{ "reaction": { "blocked_users": ["10001", "10002"] } }
+```
 
 环境变量（适合不把 token 写进文件）：
 
@@ -260,7 +267,7 @@ python -m unittest discover -s tests -t . -v
 ```
 
 测试不依赖真实 QQ：`tests/mock_onebot.py` 是一个最小 OneBot 11 协议端，
-覆盖 40 个用例：正向/反向连接、token 拒绝、断线重连、去重、关键词过滤、
+覆盖 43 个用例：正向/反向连接、token 拒绝、断线重连、去重、关键词过滤、屏蔽名单、
 限速重试、1404 不重试、LLBot 配置同步、日志轮转、CLI 自检等。
 
 ```

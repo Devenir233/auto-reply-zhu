@@ -96,6 +96,12 @@ async def run_doctor(app: AutoZhuApp, config: Config, *, test_group: int | None 
             problems += 1
             print(f"   · 群 {group_id} ❌ 不在该账号的群列表中（群号写错或机器人不在群里）")
 
+    if config.reaction.blocked_users:
+        print(
+            f"🚫 屏蔽名单：{len(config.reaction.blocked_users)} 人"
+            f"（{', '.join(config.reaction.blocked_users)}）"
+        )
+
     if test_group is not None:
         problems += await _test_reaction(app, config, test_group)
 

@@ -42,6 +42,7 @@ class ReactionConfig:
 
     groups: dict[str, list[str]] = field(default_factory=dict)  # 群号 -> 表情 ID 列表，"*" 表示所有群
     keywords: list[str] = field(default_factory=list)           # 为空表示不限制
+    blocked_users: list[str] = field(default_factory=list)      # 不贴表情的 QQ 号（屏蔽名单）
     ignore_self: bool = True
     dedupe_seconds: float = 300.0
     rate_limit_per_second: float = 1.0
@@ -128,6 +129,19 @@ class Config:
         self.reaction.groups = groups
 
         self.reaction.keywords = [str(k) for k in (self.reaction.keywords or []) if str(k)]
+
+        blocked: list[str] = []
+        for item in self.reaction.blocked_users or []:
+            value = str(item).strip()
+            if not value:
+                continue
+            if not value.isdigit():
+                raise ConfigError(
+                    f"reaction.blocked_users 里必须是 QQ 号（纯数字），而不是 {item!r}"
+                )
+            blocked.append(value)
+        # 去重但保留顺序，方便日志和自检输出
+        self.reaction.blocked_users = list(dict.fromkeys(blocked))
         self.logging.level = str(self.logging.level or "INFO").upper()
         self.logging.file = str(self.logging.file or "")
 
@@ -195,7 +209,10 @@ class Config:
         groups = "，".join(
             f"{gid}=>{','.join(ids)}" for gid, ids in self.reaction.groups.items()
         )
-        return f"{target} | 群: {groups}"
+        text = f"{target} | 群: {groups}"
+        if self.reaction.blocked_users:
+            text += f" | 屏蔽: {len(self.reaction.blocked_users)} 人"
+        return text
 
 
 def _build(cls: type, data: Any, section: str):

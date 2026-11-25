@@ -162,6 +162,22 @@ class ForwardModeTest(unittest.IsolatedAsyncioTestCase):
             "协议端返回 1403 时应标记 token 被拒绝",
         )
 
+    async def test_ignores_blocked_users(self) -> None:
+        await self.app.stop()
+        self.config.reaction.blocked_users = ["111222"]
+        self.app = AutoZhuApp(self.config)
+        await self.app.start()
+        self.assertTrue(await self.app.wait_connected(5))
+
+        await self.bot.send_event(group_event(message_id=9111, user_id=111222))
+        await asyncio.sleep(0.3)
+        self.assertEqual(self.bot.actions, [], "屏蔽名单里的用户不应触发贴表情")
+
+        await self.bot.send_event(group_event(message_id=9112, user_id=333444))
+        actions = await self.bot.wait_for_actions("set_msg_emoji_like")
+        self.assertEqual(actions[0]["params"]["message_id"], "9112")
+        self.assertEqual(self.app.service.stats.blocked, 1)
+
     async def test_dry_run_does_not_call_api(self) -> None:
         await self.app.stop()
         self.app = AutoZhuApp(self.config, dry_run=True)

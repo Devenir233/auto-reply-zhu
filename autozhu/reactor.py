@@ -40,9 +40,15 @@ class Stats:
     reacted: int = 0
     failed: int = 0
     skipped: int = 0
+    blocked: int = 0
 
     def as_dict(self) -> dict[str, int]:
-        return {"reacted": self.reacted, "failed": self.failed, "skipped": self.skipped}
+        return {
+            "reacted": self.reacted,
+            "failed": self.failed,
+            "skipped": self.skipped,
+            "blocked": self.blocked,
+        }
 
 
 class TokenBucket:
@@ -84,6 +90,7 @@ class ReactionService:
         self.queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=2000)
         self._seen: "OrderedDict[tuple[int, int], float]" = OrderedDict()
         self._bucket = TokenBucket(config.rate_limit_per_second, config.rate_limit_burst)
+        self._blocked: set[str] = set(config.blocked_users)
 
     # ---- 事件入口（由连接层同步调用，只做入队）----------------------
 
@@ -132,6 +139,11 @@ class ReactionService:
             (event.get("sender") or {}).get("user_id")
         )
         if self.config.ignore_self and user_id is not None and self.link.self_id == user_id:
+            return
+
+        if user_id is not None and str(user_id) in self._blocked:
+            self.stats.blocked += 1
+            logger.debug("用户在屏蔽名单中，跳过：%s（群 %s）", user_id, group_id)
             return
 
         text = message_text(event)
