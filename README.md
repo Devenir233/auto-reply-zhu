@@ -59,6 +59,9 @@ python main.py
 - `"groups"` 的键填群号；填 `"*"` 表示所有群
 - 想一次贴多个表情：`["12951", "178"]`
 
+> 不想手改 JSON？双击 **`配置.bat`**（或运行 `python main.py --gui`），
+> 浏览器会打开图形设置页面，改完点「保存」即可，同样写回 `config.json`。
+
 看到 `✅ 已连接 OneBot 实现` 后，群里发条消息就会自动贴上表情。
 
 ### 屏蔽某些人（可选）
@@ -90,6 +93,7 @@ python main.py --doctor --test-reaction 123456 # 给该群最近一条消息真�
 | 命令 | 作用 |
 |---|---|
 | `python main.py` | 运行 |
+| `python main.py --gui` | 打开图形设置页面（`配置.bat` 同效） |
 | `python main.py --doctor` | 自检后退出 |
 | `python main.py --dry-run` | 只打印，不真的贴表情 |
 | `python main.py --sync-token` | 换 QQ 号后，从 LLBot 配置同步 token/端口 |

@@ -82,7 +82,11 @@ class Config:
             raise ConfigError(f"找不到配置文件：{path}") from exc
         except json.JSONDecodeError as exc:
             raise ConfigError(f"配置文件不是合法的 JSON（{path}）：{exc}") from exc
+        return cls.from_dict(raw, source=path)
 
+    @classmethod
+    def from_dict(cls, raw: Any, source: Path | None = None) -> "Config":
+        """从字典构建配置（图形界面保存时复用同一套校验）。"""
         if not isinstance(raw, dict):
             raise ConfigError("配置文件根节点必须是对象")
 
@@ -90,7 +94,7 @@ class Config:
             connection=_build(ConnectionConfig, raw.get("connection"), "connection"),
             reaction=_build(ReactionConfig, raw.get("reaction"), "reaction"),
             logging=_build(LogConfig, raw.get("logging"), "logging"),
-            source=path,
+            source=source,
         )
         cfg._apply_env()
         cfg._normalize()

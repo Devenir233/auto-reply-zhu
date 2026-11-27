@@ -5,7 +5,7 @@
 
 - 目标仓库：<https://github.com/Devenir233/auto-reply-zhu>
 - 原项目：[wyx6669036/QQ-auto-zhu](https://github.com/wyx6669036/QQ-auto-zhu)（MIT）
-- 当前版本：2.1.0
+- 当前版本：2.2.0
 
 ---
 
@@ -198,6 +198,31 @@ pip install -r requirements.txt
 在 LLBot 里添加 **反向 WebSocket**：`ws://<本程序所在机器>:8080/`，token 一致。
 本程序先启动监听，LLBot 主动连入；LLBot 断线会自动重连。
 
+### 3.4 图形化配置（可选）
+
+不想手改 JSON 可以打开内置的设置页面：
+
+```bash
+python main.py --gui              # 默认 http://127.0.0.1:8090/
+python main.py --gui --gui-port 8888
+```
+
+Windows 上直接双击 `配置.bat` 即可（它会打开页面，改完点「保存」写回 `config.json`）。
+
+实现上是一个只监听 **127.0.0.1** 的小型 HTTP 服务（`autozhu/webui.py`，标准库实现，无额外依赖）：
+
+| 接口 | 说明 |
+|---|---|
+| `GET /` | 设置页面（表单 + 原生 JS，无外部资源） |
+| `GET /api/config` | 读取当前配置（需要页面内嵌的随机 token） |
+| `POST /api/config` | 用和命令行完全相同的校验逻辑保存配置 |
+
+安全设计：
+- 只绑定回环地址，局域网访问不到
+- 每次启动生成随机 token，写在页面里、接口用 `X-AutoZhu-Token` 头校验，其他网页无法跨站提交
+- 保存前走 `Config.from_dict()` 全量校验，非法配置会返回 400 并在页面上标红，不会写坏文件
+- 保存只改 `config.json`，需要重启 Auto Zhu 才生效（避免运行中配置和实际行为不一致）
+
 ---
 
 ## 4. 换 QQ 号：自动同步 token
@@ -267,7 +292,7 @@ python -m unittest discover -s tests -t . -v
 ```
 
 测试不依赖真实 QQ：`tests/mock_onebot.py` 是一个最小 OneBot 11 协议端，
-覆盖 43 个用例：正向/反向连接、token 拒绝、断线重连、去重、关键词过滤、屏蔽名单、
+覆盖 50 个用例：正向/反向连接、token 拒绝、断线重连、去重、关键词过滤、屏蔽名单、图形设置页面的接口校验、
 限速重试、1404 不重试、LLBot 配置同步、日志轮转、CLI 自检等。
 
 ```
@@ -277,9 +302,11 @@ autozhu/onebot.py       OneBot 11 连接层（正向 / 反向 WS、echo 配对�
 autozhu/reactor.py      贴表情业务（过滤/去重/限速/重试）
 autozhu/llbot.py        读取 LLBot 配置，自动同步 token
 autozhu/doctor.py       自检
+autozhu/webui.py        图形化设置页面（本地 HTTP 服务）
 autozhu/logging_setup.py 日志（控制台 + 轮转文件，兼容无控制台运行）
 tests/                  离线集成测试（含 mock 协议端）
-启动.bat / 安装开机自启.ps1 / 卸载开机自启.ps1 / 停止.bat  Windows 常驻脚本
+配置.bat                打开图形设置页面
+启动.bat / 停止.bat / 安装开机自启.ps1 / 卸载开机自启.ps1  Windows 快捷脚本
 ```
 
 CI：`.github/workflows/tests.yml`，在 Python 3.10 / 3.12 上跑全量测试。

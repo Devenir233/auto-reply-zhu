@@ -44,6 +44,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="自检时向该群最近一条消息实际贴一次表情，然后退出",
     )
     parser.add_argument("--dry-run", action="store_true", help="只打印将要贴的表情，不真的调用接口")
+    parser.add_argument("--gui", action="store_true", help="打开图形化设置页面（本地网页，改完保存即可）")
+    parser.add_argument(
+        "--gui-port",
+        type=int,
+        default=8090,
+        metavar="PORT",
+        help="设置页面监听的本地端口（默认 8090）",
+    )
     parser.add_argument(
         "--sync-token",
         action="store_true",
@@ -129,10 +137,35 @@ async def connection_hint(app: AutoZhuApp, config: Config) -> None:
         )
 
 
+async def run_settings_ui(config_path: Path, port: int) -> int:
+    """启动本地设置页面，并用默认浏览器打开。"""
+    import webbrowser
+
+    from autozhu.webui import SettingsServer
+
+    server = SettingsServer(config_path, port=port)
+    url = server.start()
+    print(f"🌐 设置页面已启动：{url}", flush=True)
+    print("   改完点「保存」写入 config.json，重启 Auto Zhu 后生效。按 Ctrl+C 关闭本页面。", flush=True)
+    try:
+        webbrowser.open(url)
+    except Exception:  # pragma: no cover - 没有浏览器的极端情况
+        print("   （没能自动打开浏览器，请手动访问上面的地址）", flush=True)
+
+    try:
+        await asyncio.Event().wait()
+    finally:
+        server.stop()
+    return 0
+
+
 async def amain(args: argparse.Namespace) -> int:
     config_path = resolve_config_path(args.config)
     if not ensure_config_exists(config_path):
         return 1
+
+    if args.gui:
+        return await run_settings_ui(config_path, args.gui_port)
 
     config = Config.load(config_path)
     if args.log_level:
